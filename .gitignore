@@ -1,0 +1,32 @@
+# Ignore large binary files, extracted APK assets, test artifacts
+ae_extracted_obb/
+ae_extracted_textures/
+ae_sprites/
+Android/
+com.alexanderbyzov.aircraftevolution.apk
+manifest.json
+*.xapk
+*.apk
+*.obb
+*.mp4
+*.webp
+*.pdf
+
+# Extracted/temp folders
+_aircraft_evolution_rea/
+_rea_reverse_engineering/
+_archive_backups/
+
+# Old zip files (keep only CrazyGames-Upload folder)
+*.zip
+
+# Node / OS
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Screenshots (large)
+_screenshots_and_qa/
+
+# Sensitive
+.env
