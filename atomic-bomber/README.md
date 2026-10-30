@@ -4,6 +4,10 @@
 
 ![Game Preview](https://img.shields.io/badge/Status-Production%20Ready-brightgreen) ![Tests](https://img.shields.io/badge/Tests-87%2F87%20Passed-brightgreen) ![Size](https://img.shields.io/badge/Bundle-2.6MB-blue) ![CrazyGames](https://img.shields.io/badge/CrazyGames-SDK%20v3-orange)
 
+## 🕹️ Live Demo
+
+👉 **[Play Atomic Strike: Cold War Live on GitHub Pages](https://coder-sachin28.github.io/atomic-strike-cold-war/)**
+
 ---
 
 ## 🎮 Gameplay
