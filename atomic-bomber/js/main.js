@@ -198,165 +198,16 @@ class AtomicBomberGame {
     this.notifyWaveCleared();
   }
 
-  // Midgame Video Ad (Official CrazyGames SDK v3 handles 3-minute frequency capping internally)
+  // Clean Pure GitHub / Web Game: Instant execution without any ads or blocks
   requestMidgameAd(onComplete) {
-    if (this.isAdShowing) {
-      if (onComplete) onComplete();
-      return;
-    }
-
-    let adTriggered = false;
-
-    // 1. CrazyGames SDK Midgame Ad (SDK v3 automatically manages frequency capping)
-    if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad) {
-      try {
-        adTriggered = true;
-        this.isAdShowing = true;
-        window.soundSystem.setAdMuted(true);
-
-        window.CrazyGames.SDK.ad.requestAd('midgame', {
-          adStarted: () => {
-            this.isAdShowing = true;
-            this.notifyGameplayStop();
-            window.soundSystem.setAdMuted(true);
-          },
-          adFinished: () => {
-            this.isAdShowing = false;
-            this.lastMidgameAdTime = Date.now();
-            window.soundSystem.setAdMuted(false);
-            if (this.state === 'PLAYING') this.notifyGameplayStart();
-            if (onComplete) onComplete();
-          },
-          adError: (error, errorData) => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (this.state === 'PLAYING') this.notifyGameplayStart();
-            console.log('CrazyGames midgame ad skipped / unfilled:', error, errorData);
-            if (onComplete) onComplete();
-          }
-        });
-        return;
-      } catch (err) {
-        adTriggered = false;
-      }
-    }
-
-    // 2. Poki SDK Commercial Break (Fallback with 3-minute client cooldown)
-    const now = Date.now();
-    if (now - this.lastMidgameAdTime < 180000) {
-      if (onComplete) onComplete();
-      return;
-    }
-
-    if (window.PokiSDK && typeof window.PokiSDK.commercialBreak === 'function') {
-      try {
-        adTriggered = true;
-        this.isAdShowing = true;
-        window.soundSystem.setAdMuted(true);
-        window.PokiSDK.commercialBreak()
-          .then(() => {
-            this.isAdShowing = false;
-            this.lastMidgameAdTime = Date.now();
-            window.soundSystem.setAdMuted(false);
-            if (onComplete) onComplete();
-          })
-          .catch(() => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (onComplete) onComplete();
-          });
-        return;
-      } catch (err) {
-        adTriggered = false;
-      }
-    }
-
-    if (!adTriggered) {
-      if (onComplete) onComplete();
-    }
+    this.isAdShowing = false;
+    if (onComplete) onComplete();
   }
 
-  // Rewarded Video Ad with Anti-Cheat & Timestamp Verification (Poki & CrazyGames compliant)
+  // Pure Web / GitHub Mode: Grants rewards / tactical capabilities directly
   requestRewardedAd(rewardName, onRewarded, onDismissed) {
-    if (this.isAdShowing) return;
-
-    let adTriggered = false;
-
-    // 1. Poki SDK Rewarded Break
-    if (window.PokiSDK && typeof window.PokiSDK.rewardedBreak === 'function') {
-      try {
-        adTriggered = true;
-        this.isAdShowing = true;
-        window.soundSystem.setAdMuted(true);
-        window.PokiSDK.rewardedBreak()
-          .then((withSuccess) => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (withSuccess) {
-              if (onRewarded) onRewarded();
-            } else {
-              if (onDismissed) onDismissed('skipped_or_cancelled');
-            }
-          })
-          .catch(() => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (onDismissed) onDismissed('ad_error');
-          });
-        return;
-      } catch (err) {
-        adTriggered = false;
-      }
-    }
-
-    let startTime = 0;
-    const MIN_WATCH_DURATION_MS = 8000; // Minimum 8 seconds playback to foil adblock spoofing & instant closing
-
-    // 2. CrazyGames SDK Rewarded Ad
-    if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad) {
-      try {
-        adTriggered = true;
-        this.isAdShowing = true;
-        window.soundSystem.setAdMuted(true);
-
-        window.CrazyGames.SDK.ad.requestAd('rewarded', {
-          adStarted: () => {
-            this.isAdShowing = true;
-            this.notifyGameplayStop();
-            startTime = Date.now();
-            window.soundSystem.setAdMuted(true);
-            console.log('CrazyGames rewarded ad playback commenced:', rewardName);
-          },
-          adFinished: () => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (this.state === 'PLAYING') this.notifyGameplayStart();
-            const duration = Date.now() - startTime;
-            console.log(`CrazyGames rewarded ad completed. Duration: ${duration}ms`);
-
-            // Official CrazyGames SDK v3: adFinished callback confirms reward delivery
-            if (onRewarded) onRewarded();
-          },
-          adError: (error, errorData) => {
-            this.isAdShowing = false;
-            window.soundSystem.setAdMuted(false);
-            if (this.state === 'PLAYING') this.notifyGameplayStart();
-            console.warn('CrazyGames rewarded ad blocked or failed:', error, errorData);
-            this.addFloatingText('AD BLOCKED! PLEASE DISABLE ADBLOCK / BRAVE SHIELDS TO CLAIM REWARD.', this.renderer.width / 2, 85, '#ff4444');
-            if (onDismissed) onDismissed('ad_error');
-          }
-        });
-      } catch (err) {
-        adTriggered = false;
-      }
-    }
-
-    if (!adTriggered) {
-      this.isAdShowing = false;
-      window.soundSystem.setAdMuted(false);
-      this.addFloatingText('AD UNAVAILABLE! DISABLE ADBLOCK TO UNLOCK REWARDS.', this.renderer.width / 2, 85, '#ff4444');
-      if (onDismissed) onDismissed('unavailable');
-    }
+    this.isAdShowing = false;
+    if (onRewarded) onRewarded();
   }
 
   // Emergency Revive Feature (Second Chance) from Rewarded Ad
@@ -516,6 +367,7 @@ class AtomicBomberGame {
         this.armory.state.credits = player.credits;
         this.armory.saveState();
       }
+      this.notifyGameplayStop();
       this.wingmenCooldown = 1100;
       this.setRadioMessage('VIPER LEAD', 'Mayday Mayday! Viper Lead to Razor Flight, request CAS air support at my coordinates!', 240, true);
       this.entities.spawnWingmenStrike();
@@ -524,29 +376,12 @@ class AtomicBomberGame {
       return;
     }
 
-    // 3. Or unlock via Rewarded Ad!
-    this.addFloatingText('⚡ LOW FUNDS! REQUESTING REWARDED AIR SUPPORT UPLINK...', player.x, player.y - 35, '#ffff00');
-    this.requestRewardedAd(
-      'wingmen_support',
-      () => {
-        // Rewarded ad successfully watched!
-        this.wingmenCooldown = 900;
-        this.setRadioMessage('VIPER LEAD', 'Mayday Mayday! Viper Lead to Razor Flight, request CAS air support at my coordinates!', 240, true);
-        this.entities.spawnWingmenStrike();
-        this.addFloatingText('★ 📺 REWARDED AIR SUPPORT AUTHORIZED! ★', player.x, player.y - 45, '#00ffcc');
-        this.updateAirSupportButtonUi();
-      },
-      () => {
-        // Fallback / canceled: grant emergency tactical support if player is in distress
-        if (player.hp < player.maxHp * 0.45) {
-          this.wingmenCooldown = 1200;
-          this.setRadioMessage('VIPER LEAD', 'Emergency distress call! Scrambling CAS air support immediately!', 240, true);
-          this.entities.spawnWingmenStrike();
-          this.addFloatingText('★ ⚠️ EMERGENCY DISTRESS AIR SUPPORT DEPLOYED! ★', player.x, player.y - 45, '#ff8800');
-          this.updateAirSupportButtonUi();
-        }
-      }
-    );
+    // 3. Low on funds: Emergency Tactical Scramble
+    this.wingmenCooldown = 1200;
+    this.setRadioMessage('VIPER LEAD', 'Emergency distress call! Scrambling CAS air support immediately!', 240, true);
+    this.entities.spawnWingmenStrike();
+    this.addFloatingText('★ ⚠️ EMERGENCY DISTRESS AIR SUPPORT DEPLOYED! ★', player.x, player.y - 45, '#ff8800');
+    this.updateAirSupportButtonUi();
   }
 
   updateAirSupportButtonUi() {
@@ -601,23 +436,11 @@ class AtomicBomberGame {
       return;
     }
 
-    // 3. Rewarded Ad unlock if low on funds
-    this.addFloatingText('⚡ LOW FUNDS! UPLINKING TO SATELLITE DRONE OPERATOR...', player.x, player.y - 35, '#ffff00');
-    this.requestRewardedAd(
-      'drone_strike',
-      () => {
-        player.droneCooldown = 600;
-        this.entities.deployFpvDroneStrike();
-        this.addFloatingText('★ 📺 REWARDED DRONE STRIKE AUTHORIZED! ★', player.x, player.y - 45, '#00ffff');
-        this.updateDroneButtonUi();
-      },
-      () => {
-        // Fallback emergency drone if in combat
-        player.droneCooldown = 900;
-        this.entities.deployFpvDroneStrike();
-        this.updateDroneButtonUi();
-      }
-    );
+    // 3. Low on funds: Emergency Drone Dispatch
+    player.droneCooldown = 900;
+    this.entities.deployFpvDroneStrike();
+    this.addFloatingText('★ 🎯 EMERGENCY FPV DRONE DISPATCHED! ★', player.x, player.y - 45, '#00e5ff');
+    this.updateDroneButtonUi();
   }
 
   updateDroneButtonUi() {
@@ -1131,14 +954,12 @@ class AtomicBomberGame {
         }
       });
 
-      // Rewarded Ad Bonus Funds Hotkey [V]
+      // Tactical Supply Funds Hotkey [V]
       if (inp.consumeKeyPress('KeyV')) {
-        this.requestRewardedAd('bonus_funds', () => {
-          this.armory.state.credits += 1500;
-          this.armory.saveState();
-          window.soundSystem.play('beep', { volume: 1.0 });
-          this.addFloatingText('+$1,500 COMBAT FUNDS RECEIVED!', this.renderer.width / 2, 75, '#ffff00');
-        });
+        this.armory.state.credits += 1500;
+        this.armory.saveState();
+        window.soundSystem.play('beep', { volume: 1.0 });
+        this.addFloatingText('+$1,500 COMBAT FUNDS GRANTED!', this.renderer.width / 2, 75, '#ffff00');
         return;
       }
 
@@ -1338,9 +1159,7 @@ class AtomicBomberGame {
 
     if (this.state === 'GAMEOVER') {
       if (inp.consumeKeyPress('KeyR')) {
-        this.requestRewardedAd('emergency_revive', () => {
-          this.revivePlayer();
-        });
+        this.revivePlayer();
         return;
       }
       if (inp.consumeKeyPress('Space') || inp.consumeKeyPress('Enter')) {
@@ -2045,7 +1864,7 @@ class AtomicBomberGame {
     ctx.fillStyle = '#55ff55';
     ctx.fillText(`CREDITS SAVED TO ACCOUNT: $${this.armory.state.credits}`, width / 2, cardY + 160);
 
-    // Rewarded Ad Revive Button (Second Chance: 100% Armor & Munitions Restock)
+    // Second Chance: Emergency Tactical Revive (Free in GitHub / Web Edition)
     const revW = 460;
     const revH = 46;
     const revX = width / 2 - revW / 2;
@@ -2063,9 +1882,7 @@ class AtomicBomberGame {
       w: revW,
       h: revH,
       callback: () => {
-        this.requestRewardedAd('emergency_revive', () => {
-          this.revivePlayer();
-        });
+        this.revivePlayer();
       }
     });
 
@@ -2073,7 +1890,7 @@ class AtomicBomberGame {
     ctx.textBaseline = 'middle';
     ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('🎬 WATCH AD TO REVIVE & CONTINUE SORTIE [R]', width / 2, revY + 18);
+    ctx.fillText('⚡ EMERGENCY FIELD REVIVE & CONTINUE SORTIE [R]', width / 2, revY + 18);
 
     ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillStyle = '#77ff99';
@@ -2448,7 +2265,7 @@ class AtomicBomberGame {
           ctx.fillStyle = '#00e5ff';
           ctx.fillText(`✈ TEST FLY: $${rental.rentalFee}`, cx + planeCardW / 2, b2Y + 18);
         } else {
-          // Free 1-Ad Instant Rental Sortie (CrazyGames submission compliant)
+          // Free 1-Sortie Tactical Test Flight Permit
           ctx.fillStyle = 'rgba(14, 38, 58, 0.95)';
           ctx.fillRect(btnX, b2Y, btnW, b2H);
           ctx.strokeStyle = '#33ccff';
@@ -2468,7 +2285,7 @@ class AtomicBomberGame {
 
           ctx.font = 'bold 9.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
           ctx.fillStyle = '#33ccff';
-          ctx.fillText('🎬 TEST SORTIE (1 AD)', cx + planeCardW / 2, b2Y + 18);
+          ctx.fillText('✈ TEST SORTIE (FREE)', cx + planeCardW / 2, b2Y + 18);
         }
       }
     });
@@ -2601,15 +2418,15 @@ class AtomicBomberGame {
     ctx.shadowBlur = 6;
     ctx.fillText('← RETURN TO SORTIE / GAME [ESC]', width / 2, retBtnY + retBtnH / 2);
 
-    // Bottom-Right Rewarded Ad Button: +$1,500 Bonus Funds (Completely separated from top HTML buttons!)
+    // Bottom-Right Tactical Grant: +$1,500 Bonus Funds [V]
     const adFundW = 340;
     const adFundH = 44;
     const adFundX = width - adFundW - 35;
     const adFundY = height - 52;
 
-    ctx.fillStyle = 'rgba(65, 52, 12, 0.95)';
+    ctx.fillStyle = 'rgba(25, 45, 25, 0.95)';
     ctx.fillRect(adFundX, adFundY, adFundW, adFundH);
-    ctx.strokeStyle = '#ffff00';
+    ctx.strokeStyle = '#00ff88';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(adFundX, adFundY, adFundW, adFundH);
 
@@ -2619,18 +2436,16 @@ class AtomicBomberGame {
       w: adFundW,
       h: adFundH,
       callback: () => {
-        this.requestRewardedAd('bonus_funds', () => {
-          this.armory.state.credits += 1500;
-          this.armory.saveState();
-          window.soundSystem.play('beep', { volume: 1.0 });
-          this.addFloatingText('+$1,500 COMBAT FUNDS RECEIVED!', width / 2, 75, '#ffff00');
-        });
+        this.armory.state.credits += 1500;
+        this.armory.saveState();
+        window.soundSystem.play('beep', { volume: 1.0 });
+        this.addFloatingText('+$1,500 COMBAT SUPPLY FUNDS GRANTED!', width / 2, 75, '#ffff00');
       }
     });
 
     ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = '#ffff00';
-    ctx.fillText('🎬 WATCH AD: +$1,500 FUNDS [V]', adFundX + adFundW / 2, adFundY + adFundH / 2);
+    ctx.fillStyle = '#00ffcc';
+    ctx.fillText('💰 CLAIM SUPPLY GRANT: +$1,500 [V]', adFundX + adFundW / 2, adFundY + adFundH / 2);
 
     ctx.restore();
   }

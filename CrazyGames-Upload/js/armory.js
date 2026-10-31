@@ -259,34 +259,30 @@ class ArmoryManager {
     return { isUnlocked: false, canRent: true, onCooldown: false, minutesLeft: 0, progress, rentalFee };
   }
 
-  // 1-Ad Instant Rental Sortie (100% CrazyGames Submission Compliant)
+  // 1-Sortie Instant Tactical Test Permit
   watchRentalAd(id, onSuccess) {
     const status = this.getRentalStatus(id);
-    if (status.isUnlocked || status.onCooldown) return;
+    if (status.isUnlocked) return;
 
-    this.game.requestRewardedAd(`plane_trial_${id}`, () => {
-      this.state.adRentalProgress[id] = 0;
-      this.state.adRentalCooldowns[id] = Date.now();
-      this.trialPlane = id;
-      this.state.selectedPlane = id;
-      this.inspectingPlane = id;
-      this.saveState();
-      window.soundSystem.play('beep', { volume: 1.0 });
-      if (typeof window.soundSystem.playCoinChime === 'function') {
-        window.soundSystem.playCoinChime();
-      }
-      const pObj = this.getPlaneList().find(p => p.id === id);
-      const name = pObj ? pObj.name : 'AIRCRAFT';
-      this.game.addFloatingText(`★ ${name} RENTED FOR 1 SORTIE! ★`, this.game.renderer.width / 2, 85, '#00ff66');
-      if (this.game.setRadioMessage) {
-        this.game.setRadioMessage('COMMAND', `COMMAND: Tactical rental cleared! You are piloting the ${name} for this sortie!`, 260);
-      }
+    this.trialPlane = id;
+    this.state.selectedPlane = id;
+    this.inspectingPlane = id;
+    this.saveState();
+    window.soundSystem.play('beep', { volume: 1.0 });
+    if (typeof window.soundSystem.playCoinChime === 'function') {
+      window.soundSystem.playCoinChime();
+    }
+    const pObj = this.getPlaneList().find(p => p.id === id);
+    const name = pObj ? pObj.name : 'AIRCRAFT';
+    this.game.addFloatingText(`★ ${name} AUTHORIZED FOR TEST SORTIE! ★`, this.game.renderer.width / 2, 85, '#00ff66');
+    if (this.game.setRadioMessage) {
+      this.game.setRadioMessage('COMMAND', `COMMAND: Tactical clearance granted! You are piloting the ${name} for this sortie!`, 260);
+    }
 
-      if (this.game.entities && this.game.entities.player && this.game.entities.player.alive) {
-        this.game.entities.switchPlayerModel(id);
-      }
-      if (onSuccess) onSuccess();
-    });
+    if (this.game.entities && this.game.entities.player && this.game.entities.player.alive) {
+      this.game.entities.switchPlayerModel(id);
+    }
+    if (onSuccess) onSuccess();
   }
 
   // Combat Credit Rental Option (Test Sortie Permit)

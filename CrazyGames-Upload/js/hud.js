@@ -541,9 +541,10 @@ class HUD {
 
     // ========================================================
     // 5. TOP-RIGHT MINIMALIST ORDNANCE ICONS (Aircraft Evolution Style)
+    // Positioned below top bar to prevent any overlap with overlay buttons
     // ========================================================
-    const ordX = width - 460;
-    const ordY = 10;
+    const ordX = width - 440;
+    const ordY = barH + 6;
     const ordItems = [
       { icon: '💣', label: `x${player.bombs}`, col: '#ffffff' },
       { icon: '💥', label: `x${player.clusters}`, col: '#38bdf8' },
@@ -557,11 +558,11 @@ class HUD {
 
     let curItemX = ordX;
     for (const item of ordItems) {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
       ctx.beginPath();
       ctx.roundRect(curItemX, ordY, 48, 18, 9);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -826,11 +827,11 @@ class HUD {
       statusText = '★ $1.5K ★';
       statusColor = '#55ffff';
     } else {
-      btnBg = 'rgba(40, 32, 12, 0.42)';
-      btnBorder = 'rgba(255, 200, 0, 0.6)';
+      btnBg = 'rgba(12, 32, 24, 0.42)';
+      btnBorder = 'rgba(0, 200, 140, 0.6)';
       titleText = '👥 SUPPORT [H]';
-      statusText = '📺 AD UNLOCK';
-      statusColor = '#ffdd44';
+      statusText = '★ CALL [H] ★';
+      statusColor = '#00ffcc';
     }
 
     ctx.fillStyle = btnBg;
@@ -893,11 +894,11 @@ class HUD {
       dStatusText = '★ $500 ★';
       dStatusColor = '#55ffff';
     } else {
-      dBtnBg = 'rgba(40, 32, 12, 0.42)';
-      dBtnBorder = 'rgba(255, 200, 0, 0.6)';
+      dBtnBg = 'rgba(10, 36, 42, 0.45)';
+      dBtnBorder = 'rgba(0, 200, 220, 0.6)';
       dTitleText = '🎯 DRONE [U]';
-      dStatusText = '📺 AD UNLOCK';
-      dStatusColor = '#ffdd44';
+      dStatusText = '★ LAUNCH ★';
+      dStatusColor = '#00e5ff';
     }
 
     ctx.fillStyle = dBtnBg;

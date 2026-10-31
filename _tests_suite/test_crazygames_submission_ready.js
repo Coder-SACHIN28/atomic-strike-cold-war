@@ -170,6 +170,7 @@ const sandbox = {
   }
 };
 sandbox.window = sandbox;
+sandbox.window.location = { hostname: 'crazygames.com' };
 sandbox.window.CrazyGames = mockCrazyGamesSDK;
 sandbox.addEventListener = () => {};
 sandbox.window.addEventListener = () => {};
@@ -265,15 +266,15 @@ console.log('✓ PASS: gameplayStop fired when aircraft is destroyed.');
 
 // 3.7 Verify Rewarded Ads without Anti-Cheat Delay Blocker
 console.log('\nCHECKPOINT 4: Testing Rewarded Ad & Instant Reward Delivery for QA Review...');
-let rewardReceived = false;
 vm.runInContext(`
+  window.rewardReceived = false;
   window.atomicGame.requestRewardedAd('emergency_revive', () => {
-    rewardReceived = true;
+    window.rewardReceived = true;
   });
 `, context);
 
 setTimeout(() => {
-  const result = vm.runInContext('rewardReceived', context);
+  const result = vm.runInContext('window.rewardReceived', context);
   assert.strictEqual(result, true, 'Rewarded ad must grant reward immediately upon adFinished in test mode');
   console.log('✓ PASS: Rewarded ad delivers reward reliably without client-side duration rejection.');
 

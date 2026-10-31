@@ -20,6 +20,11 @@ const MIME = {
 const server = http.createServer((req, res) => {
   let reqPath = decodeURIComponent(req.url.split('?')[0]);
   if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
+  if (reqPath.startsWith('/atomic-bomber/')) {
+    reqPath = reqPath.replace('/atomic-bomber/', '/');
+  } else if (reqPath === '/atomic-bomber') {
+    reqPath = '/index.html';
+  }
   const filePath = path.join(DIR, reqPath);
   if (!fs.existsSync(filePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
