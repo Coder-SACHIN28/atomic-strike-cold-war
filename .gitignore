@@ -16,6 +16,9 @@ manifest.json
 _aircraft_evolution_rea/
 _rea_reverse_engineering/
 _archive_backups/
+*APK/
+CrazyGames-Covers/
+AGENTS.md
 
 # Old zip files (keep only CrazyGames-Upload folder)
 *.zip

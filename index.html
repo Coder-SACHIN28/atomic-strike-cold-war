@@ -2,41 +2,194 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atomic Strike: Cold War - Play Now!</title>
-  <meta name="description" content="High-quality HTML5 military aerial combat game. 11 aircraft, 9 weapon types, Aircraft Evolution art style. Play free in browser!">
-  <meta http-equiv="refresh" content="0; url=atomic-bomber/index.html">
-  <style>
-    body {
-      margin: 0;
-      background: #0a0a0a;
-      color: #00ff88;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .loading {
-      text-align: center;
-    }
-    .loading h1 {
-      font-size: 2em;
-      margin-bottom: 0.5em;
-    }
-    .loading p {
-      color: #88aacc;
-    }
-    a {
-      color: #00e5ff;
-      text-decoration: none;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Atomic Strike: Cold War - NATO Air Combat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="loading">
-    <h1>⚛️ Atomic Strike: Cold War</h1>
-    <p>Loading game... If not redirected, <a href="atomic-bomber/index.html">click here to play</a>.</p>
+  <div id="game-container">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+    
+    <!-- Top Quick Control Bar -->
+    <div id="overlay-bar">
+      <button id="btn-sound" class="hud-btn" title="Toggle Audio (M)">🔊 ON</button>
+      <button id="btn-fullscreen" class="hud-btn" title="Toggle Fullscreen">⛶ FULL</button>
+      <button id="btn-codex" class="hud-btn highlight" title="Know Your Enemy - Field Intel Codex (I)">📖 INTEL (I)</button>
+      <button id="btn-armory" class="hud-btn" title="Armory / Hangar (A)">🎖️ ARMORY</button>
+      <button id="btn-theater" class="hud-btn" title="Switch Mission Theater / Map (T)">🗺️ EUR</button>
+    </div>
   </div>
+
+  <!-- Game Engine Modules -->
+  <script src="js/audio.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/terrain.js"></script>
+  <script src="js/weapons.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/armory.js"></script>
+  <script src="js/codex.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+    // Quick Overlay Buttons Handlers
+    const btnSound = document.getElementById('btn-sound');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const btnArmory = document.getElementById('btn-armory');
+    const btnTheater = document.getElementById('btn-theater');
+
+    function updateSoundUi(enabled) {
+      if (!btnSound) return;
+      btnSound.innerText = enabled ? '🔊 ON' : '🔇 OFF';
+      btnSound.classList.toggle('muted', !enabled);
+    }
+
+    btnSound.addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      if (window.soundSystem) {
+        const enabled = window.soundSystem.toggleSound();
+        updateSoundUi(enabled);
+      }
+    });
+
+    function updateFullscreenUi() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (btnFullscreen) {
+        btnFullscreen.innerText = isFs ? '🗗 WIN' : '⛶ FULL';
+        btnFullscreen.classList.toggle('active', isFs);
+      }
+    }
+
+    btnFullscreen.addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      const container = document.getElementById('game-container');
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen().catch(() => {});
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    });
+
+    document.addEventListener('fullscreenchange', updateFullscreenUi);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUi);
+
+    function updateArmoryUi() {
+      if (!btnArmory || !window.atomicGame) return;
+      const inArmory = window.atomicGame.state === 'ARMORY';
+      btnArmory.innerText = inArmory ? '🛩️ RESUME' : '🎖️ ARMORY';
+      btnArmory.classList.toggle('active', inArmory);
+    }
+
+    btnArmory.addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      if (window.atomicGame) {
+        if (window.atomicGame.state === 'ARMORY') {
+          window.atomicGame.closeArmory();
+        } else {
+          window.atomicGame.openArmory();
+        }
+        updateArmoryUi();
+      }
+    });
+
+    const btnCodex = document.getElementById('btn-codex');
+    if (btnCodex) {
+      btnCodex.addEventListener('click', (e) => {
+        e.currentTarget.blur();
+        if (window.atomicGame) {
+          if (window.atomicGame.state === 'CODEX') {
+            window.atomicGame.closeCodex();
+          } else {
+            window.atomicGame.openCodex();
+          }
+        }
+      });
+    }
+
+    if (btnTheater) {
+      btnTheater.addEventListener('click', (e) => {
+        e.currentTarget.blur();
+        if (window.atomicGame) {
+          window.atomicGame.cycleTheater();
+        }
+      });
+    }
+
+    // Global Hotkeys for Sound (M) and Codex (I) - Note: KeyK is strictly reserved for ROCKETS!
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyM') {
+        if (window.soundSystem) {
+          const enabled = window.soundSystem.toggleSound();
+          updateSoundUi(enabled);
+        }
+      } else if (e.code === 'KeyI') {
+        if (window.atomicGame) {
+          if (window.atomicGame.state === 'CODEX') {
+            window.atomicGame.closeCodex();
+          } else {
+            window.atomicGame.openCodex();
+          }
+        }
+      }
+    });
+
+    // CrazyGames Quality Compliance: Auto-Pause and Mute on Tab Focus Loss
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (window.atomicGame && window.atomicGame.state === 'PLAYING') {
+          window.atomicGame.state = 'PAUSED';
+          if (window.soundSystem) window.soundSystem.setAdMuted(true);
+        }
+      } else {
+        if (window.soundSystem) window.soundSystem.setAdMuted(false);
+      }
+    });
+
+    // Automated URL Parameter inspection for QA & Testing
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('codex') === '1') {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (window.atomicGame) {
+            window.atomicGame.openCodex();
+            const unit = urlParams.get('unit');
+            if (unit && window.atomicGame.codex) {
+              window.atomicGame.codex.selectedUnitId = unit;
+            }
+          }
+        }, 350);
+      });
+    } else if (urlParams.get('play') === '1') {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (window.atomicGame) {
+            window.atomicGame.startNewGame('a10');
+            if (urlParams.get('rocket') === '1') {
+              setTimeout(() => {
+                if (window.atomicGame && window.atomicGame.entities && window.atomicGame.entities.player) {
+                  window.atomicGame.weapons.fireRocket(window.atomicGame.entities.player);
+                }
+              }, 300);
+            } else if (urlParams.get('bandit') === '1') {
+              setTimeout(() => {
+                if (window.atomicGame && window.atomicGame.entities) {
+                  window.atomicGame.entities.spawnMig(3);
+                }
+              }, 300);
+            }
+          }
+        }, 350);
+      });
+    }
+  </script>
 </body>
 </html>
